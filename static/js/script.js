@@ -31,23 +31,31 @@ document.getElementById("csvFile").addEventListener("change", function (e) {
           const data = results.data;
           console.log(`CSV parsed successfully: ${data.length} rows`);
           
-          // Limit data for localStorage (max 10000 rows to avoid quota issues)
-          const maxRows = 10000;
-          const dataToStore = data.length > maxRows ? data.slice(0, maxRows) : data;
+          // Try storing with progressively smaller datasets
+          let stored = false;
+          const maxRowsLevels = [5000, 3000, 1000, 500]; // Try different sizes
           
-          if (data.length > maxRows) {
-            console.warn(`File has ${data.length} rows. Only storing first ${maxRows} rows in localStorage.`);
+          for (let maxRows of maxRowsLevels) {
+            try {
+              const dataToStore = data.slice(0, maxRows);
+              localStorage.setItem("creditcard_csv_data", JSON.stringify(dataToStore));
+              console.log(`Successfully stored ${dataToStore.length} rows in localStorage`);
+              
+              if (data.length > maxRows) {
+                console.warn(`File has ${data.length} rows. Stored ${maxRows} rows due to storage limits.`);
+              }
+              
+              stored = true;
+              break; // Success! Exit loop
+            } catch (storageError) {
+              console.warn(`Failed to store ${maxRows} rows, trying smaller dataset...`);
+              continue; // Try next smaller size
+            }
           }
           
-          try {
-            localStorage.setItem("creditcard_csv_data", JSON.stringify(dataToStore));
-            console.log(`Successfully stored ${dataToStore.length} rows in localStorage`);
-          } catch (storageError) {
-            console.error('localStorage quota exceeded. Reducing dataset...', storageError);
-            // Try with even smaller dataset
-            const reducedData = data.slice(0, 5000);
-            localStorage.setItem("creditcard_csv_data", JSON.stringify(reducedData));
-            console.log(`Stored reduced dataset: ${reducedData.length} rows`);
+          if (!stored) {
+            console.error('Failed to store data in localStorage. Storage quota exceeded.');
+            alert('Warning: Unable to save full dataset due to browser storage limits. Overview will still be displayed.');
           }
           
           showSuccessMessage();
