@@ -11,13 +11,21 @@ document.getElementById("csvFile").addEventListener("change", function (e) {
   overviewProcessing.classList.add("active");
   overviewDesc.classList.add("hide");
   
+  // Update processing text with file info
+  const processingText = document.querySelector('.overview-text');
+  processingText.textContent = `Processing ${file.name} (${fileSize} MB)... Please wait.`;
+  
   console.log(`Processing CSV file: ${file.name} (${fileSize} MB)`);
+  
+  // Use web worker for large files (> 1MB) to avoid blocking UI
+  const useWorker = file.size > 1024 * 1024;
   
   setTimeout(() => {
     Papa.parse(file, {
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
+      worker: useWorker, // Use web worker for large files
       complete: function (results) {
         try {
           const data = results.data;
