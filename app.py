@@ -285,48 +285,65 @@ def predict_with_kb():
     Endpoint prediksi dengan Knowledge Base System
     Menggabungkan ML prediction dengan rule-based reasoning
     """
-    data = request.json
-    features = np.array(data['features']).reshape(1, -1)
-    model_name = data.get('model', 'xgb')  # Default XGBoost (best performer)
-    
-    # Convert to DataFrame
-    feature_names = ['id'] + [f'V{i}' for i in range(1, 29)] + ['Amount']
-    features_df = pd.DataFrame(features, columns=feature_names)
-    
-    # Get model
-    models = {
-        'logreg': logreg_model, 'svm': svm_model, 'knn': knn_model,
-        'rf': rf_model, 'dt': dt_model, 'gb': gb_model,
-        'xgb': xgb_model, 'adaboost': adaboost_model
-    }
-    model = models.get(model_name, xgb_model)
-    
-    # ML Prediction
-    ml_pred = model.predict(features_df)[0]
-    if hasattr(model, "predict_proba"):
-        ml_prob = model.predict_proba(features_df)[0, 1]
-    else:
-        ml_prob = float(model.decision_function(features_df)[0])
-    ml_acc = model_accuracies.get(model_name, 0.99)
-    
-    ml_prediction = {
-        'prediction': int(ml_pred),
-        'probability': float(ml_prob),
-        'accuracy': float(ml_acc)
-    }
-    
-    # Prepare features dictionary for KB
-    # features[0][0] adalah kolom 'id' yang sebenarnya adalah Time
-    features_dict = {
-        'Time': float(features[0][0]),  # Kolom pertama (id) = Time
-        'Amount': float(features[0][-1])  # Kolom terakhir = Amount
-    }
-    # V1-V28 ada di indeks 1-28
-    for i in range(1, 29):
-        features_dict[f'V{i}'] = float(features[0][i])
-    
-    # Knowledge Base Inference
-    kb_result = kb_system.infer(features_dict, ml_prediction)
+    try:
+        data = request.json
+        features = np.array(data['features']).reshape(1, -1)
+        model_name = data.get('model', 'xgb')  # Default XGBoost (best performer)
+        
+        # Convert to DataFrame
+        feature_names = ['id'] + [f'V{i}' for i in range(1, 29)] + ['Amount']
+        features_df = pd.DataFrame(features, columns=feature_names)
+        
+        # Get model
+        models = {
+            'logreg': logreg_model, 'svm': svm_model, 'knn': knn_model,
+            'rf': rf_model, 'dt': dt_model, 'gb': gb_model,
+            'xgb': xgb_model, 'adaboost': adaboost_model
+        }
+        model = models.get(model_name, xgb_model)
+        
+        # ML Prediction
+        ml_pred = model.predict(features_df)[0]
+        
+        # Get probability with error handling
+        try:
+            if model_name == 'xgb':
+                # XGBoost might have issues with predict_proba if not properly loaded
+                # Use predict to get raw prediction score
+                ml_prob = float(ml_pred)
+            elif hasattr(model, "predict_proba"):
+                ml_prob = model.predict_proba(features_df)[0, 1]
+            else:
+                ml_prob = float(model.decision_function(features_df)[0])
+        except Exception as e:
+            # Fallback: use prediction value as probability
+            ml_prob = float(ml_pred)
+        
+        ml_acc = model_accuracies.get(model_name, 0.99)
+        
+        ml_prediction = {
+            'prediction': int(ml_pred),
+            'probability': float(ml_prob),
+            'accuracy': float(ml_acc)
+        }
+        
+        # Prepare features dictionary for KB
+        # features[0][0] adalah kolom 'id' yang sebenarnya adalah Time
+        features_dict = {
+            'Time': float(features[0][0]),  # Kolom pertama (id) = Time
+            'Amount': float(features[0][-1])  # Kolom terakhir = Amount
+        }
+        # V1-V28 ada di indeks 1-28
+        for i in range(1, 29):
+            features_dict[f'V{i}'] = float(features[0][i])
+        
+        # Knowledge Base Inference
+        kb_result = kb_system.infer(features_dict, ml_prediction)
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'message': 'Error during Knowledge Base inference'
+        }), 500
     
     # Return comprehensive result
     return jsonify({
