@@ -1,0 +1,102 @@
+[
+  {
+    "id": "R1",
+    "name": "Nominal Sangat Tinggi",
+    "condition": "amount > 5000",
+    "action": "increase_risk",
+    "weight": 0.3,
+    "priority": 1,
+    "description": "Transaksi dengan nominal sangat tinggi berisiko penipuan",
+    "category": "amount_based"
+  },
+  {
+    "id": "R2",
+    "name": "Waktu Tidak Biasa - Tengah Malam",
+    "condition": "hour in [0, 1, 2, 3, 4, 5, 23]",
+    "action": "increase_risk",
+    "weight": 0.2,
+    "priority": 2,
+    "description": "Transaksi di jam berisiko tinggi (tengah malam - subuh)",
+    "category": "time_based"
+  },
+  {
+    "id": "R3",
+    "name": "Micro Transaction Mencurigakan",
+    "condition": "amount < 1 and prob > 0.3",
+    "action": "increase_risk",
+    "weight": 0.15,
+    "priority": 3,
+    "description": "Transaksi mikro dengan probabilitas ML mencurigakan - sering digunakan untuk test kartu curian",
+    "category": "pattern_based"
+  },
+  {
+    "id": "R4",
+    "name": "Anomali Fitur Ekstrim",
+    "condition": "extreme_features > 3",
+    "action": "increase_risk",
+    "weight": 0.25,
+    "priority": 2,
+    "description": "Banyak fitur PCA menunjukkan nilai ekstrim (outlier)",
+    "category": "feature_based"
+  },
+  {
+    "id": "R5",
+    "name": "Kombinasi Waktu dan Nominal Tinggi",
+    "condition": "hour in [0, 1, 2, 3, 4, 5, 23] and amount > 1000",
+    "action": "flag_high_risk",
+    "weight": 0.4,
+    "priority": 1,
+    "description": "Kombinasi berbahaya: transaksi malam hari dengan nominal tinggi",
+    "category": "combined"
+  },
+  {
+    "id": "R6",
+    "name": "Nilai Ekstrim Sangat Tinggi",
+    "condition": "very_extreme_features > 1",
+    "action": "increase_risk",
+    "weight": 0.35,
+    "priority": 1,
+    "description": "Fitur dengan nilai sangat ekstrim (|z| > 5) menandakan anomali serius",
+    "category": "feature_based"
+  },
+  {
+    "id": "R7",
+    "name": "Nominal Sedang dengan Probabilitas Tinggi",
+    "condition": "amount > 500 and amount < 2000 and prob > 0.6",
+    "action": "increase_risk",
+    "weight": 0.2,
+    "priority": 2,
+    "description": "Transaksi nominal sedang dengan probabilitas fraud tinggi dari ML",
+    "category": "combined"
+  },
+  {
+    "id": "R8",
+    "name": "Transaksi Sangat Kecil",
+    "condition": "amount < 0.5",
+    "action": "increase_risk",
+    "weight": 0.1,
+    "priority": 3,
+    "description": "Transaksi dengan nominal sangat kecil (micro testing)",
+    "category": "amount_based"
+  },
+  {
+    "id": "R9",
+    "name": "Probabilitas ML Sangat Tinggi",
+    "condition": "prob > 0.85",
+    "action": "flag_high_risk",
+    "weight": 0.5,
+    "priority": 1,
+    "description": "Model ML sangat yakin ini adalah fraud",
+    "category": "ml_based"
+  },
+  {
+    "id": "R10",
+    "name": "Zona Abu-abu dengan Anomali",
+    "condition": "prob > 0.4 and prob < 0.6 and extreme_features > 2",
+    "action": "increase_risk",
+    "weight": 0.25,
+    "priority": 2,
+    "description": "Probabilitas ambiguous dengan fitur anomali - perlu investigasi",
+    "category": "combined"
+  }
+]
