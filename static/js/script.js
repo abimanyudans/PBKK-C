@@ -4,22 +4,44 @@ const successMsg = document.getElementById("success-message");
 const overviewMetrics = document.getElementById("overview-metrics");
 document.getElementById("csvFile").addEventListener("change", function (e) {
   if (!e.target.files.length) return;
+  
+  const file = e.target.files[0];
+  const fileSize = (file.size / 1024 / 1024).toFixed(2); // Size in MB
+  
   overviewProcessing.classList.add("active");
   overviewDesc.classList.add("hide");
+  
+  console.log(`Processing CSV file: ${file.name} (${fileSize} MB)`);
+  
   setTimeout(() => {
-    Papa.parse(e.target.files[0], {
+    Papa.parse(file, {
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
       complete: function (results) {
-        const data = results.data;
-        localStorage.setItem("creditcard_csv_data", JSON.stringify(data));
-        showSuccessMessage();
-        updateOverview(data);
-        overviewProcessing.classList.remove("active");
+        try {
+          const data = results.data;
+          console.log(`CSV parsed successfully: ${data.length} rows`);
+          
+          localStorage.setItem("creditcard_csv_data", JSON.stringify(data));
+          showSuccessMessage();
+          updateOverview(data);
+          overviewProcessing.classList.remove("active");
+        } catch (error) {
+          console.error('Error processing CSV:', error);
+          alert('Error processing CSV file. Please check the file format.');
+          overviewProcessing.classList.remove("active");
+          overviewDesc.classList.remove("hide");
+        }
       },
+      error: function(error) {
+        console.error('CSV parsing error:', error);
+        alert('Error parsing CSV file: ' + error.message);
+        overviewProcessing.classList.remove("active");
+        overviewDesc.classList.remove("hide");
+      }
     });
-  }, 100);
+  }, 200);
 });
 
 function toggleSidebar() {
