@@ -23,13 +23,31 @@ document.getElementById("csvFile").addEventListener("change", function (e) {
           const data = results.data;
           console.log(`CSV parsed successfully: ${data.length} rows`);
           
-          localStorage.setItem("creditcard_csv_data", JSON.stringify(data));
+          // Limit data for localStorage (max 10000 rows to avoid quota issues)
+          const maxRows = 10000;
+          const dataToStore = data.length > maxRows ? data.slice(0, maxRows) : data;
+          
+          if (data.length > maxRows) {
+            console.warn(`File has ${data.length} rows. Only storing first ${maxRows} rows in localStorage.`);
+          }
+          
+          try {
+            localStorage.setItem("creditcard_csv_data", JSON.stringify(dataToStore));
+            console.log(`Successfully stored ${dataToStore.length} rows in localStorage`);
+          } catch (storageError) {
+            console.error('localStorage quota exceeded. Reducing dataset...', storageError);
+            // Try with even smaller dataset
+            const reducedData = data.slice(0, 5000);
+            localStorage.setItem("creditcard_csv_data", JSON.stringify(reducedData));
+            console.log(`Stored reduced dataset: ${reducedData.length} rows`);
+          }
+          
           showSuccessMessage();
-          updateOverview(data);
+          updateOverview(data); // Use full data for overview
           overviewProcessing.classList.remove("active");
         } catch (error) {
           console.error('Error processing CSV:', error);
-          alert('Error processing CSV file. Please check the file format.');
+          alert(`Error processing CSV file: ${error.message}\nPlease check the file format.`);
           overviewProcessing.classList.remove("active");
           overviewDesc.classList.remove("hide");
         }
